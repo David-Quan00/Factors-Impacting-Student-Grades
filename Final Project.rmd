@@ -1,0 +1,356 @@
+---
+title: "Final Project: Factors that Impact Student Grades in STA302"
+author: "David Quan"
+date: "Friday, August 20th, 2021"
+header-includes:
+    - \usepackage{setspace}\doublespacing
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## Introduction
+|         At the University of Toronto, the class called Methods of Data Analysis 1 (also know as STA302) was taught online during the Summer term of 2021.  This was due to the worldwide pandemic known as COVID-19.  The goal of this study is to determine the factors that predict a student's performance on the final STA302 assessment.  For a total of 4 weeks throughout the semester, students tracked the number of hours they spent studying for STA302, and the number of hours spent thinking about COVID-19 as stress due to the pandemic may play a role.  In addition, since the geographical location of the students taking the class varied, the location they are situated was noted because some countries are impacted harder than others.  This impact may affect the number of hours spent thinking about COVID-19, or even their assessment marks.  To assess the significance of these possible factors listed above, we will develop several regression models containing various combinations of predictor variables, analyze them using several criterion, and select the most accurate one.  It is important that we consider multiple different models because choosing one arbitrarily doesn’t guarantee that the selected one is the best.  We will look at the model and whether or not it accurately predicts a student’s performance.  
+|         For this upcoming school year, many courses are still being conducted online at many universities across Canada.  This study is important because it will outline to instructors the main factors that impact a student’s grade.  With this knowledge, different approaches to conducting online classes can be explored to optimize the students’ ability to succeed.  
+
+\newpage
+
+## Exploratory Data Analysis
+|         To begin, we will introduce the variables in the data set provided by Professor Asidianya.  Students in STA302 wrote a weekly quiz covering the material learnt in the previous week's lecture.  Each quiz was out of 10 total marks, and the grade for each quiz was recorded.  The country the students studied STA302 within was documented in the country variable.  It is believed that the number of hours spent thinking about COVID-19 each week may have an impact on the quiz grades, so this was tracked.  Lastly. the variable of number of hours spent studying for the courses (which included the hours a student attended lecture) was recorded too.  Thesea re the variables in the data set, which we'll be analysing.
+
+|         Now looking at the descriptive statistics of all our variables, we obtain the following histograms/graphs:
+
+![img1](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\hist_quiz_scores.PNG)
+![img2](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\hist_country.PNG)
+![img3](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\country_vs_quiz4.PNG)
+![img4](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\hist_covid_hours.PNG)
+![img5](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\hist_study_hours.PNG)
+
+|         We notice that the histograms for the individuals quiz scores are left skewed.  This is expected because quizzes aren't meant for many to fail.  Since we want to predict a student’s grade in the final STA302 Assessment, which is their grade on the fourth quiz, this is our response variable.  Taking a look at the histogram of our response variable, we notice that it is left skewed.  In the model developing section, we will look at applying a transformation to make it look as normally distributed as possible.  
+
+|         For the country variable, note that we denoted 0 to be Canada, 1 to be China, and 2 to be all other countries (including the null values).  The data of the individual countries were analyzed and grouped in such a way because upon looking at the 3 possible country categories vs quiz 4 graph, we see that all the data is left skewed (some more than others).  If it so happened that the 3 country categories had different distributions, then we would have used different models, however this is not the case. Since all the 3 data sets share the same left skewed distribution, we will use country as a predictor variable.  
+
+
+|         Now we will look at each individual predictor variables compared to Quiz4's score.  The first set of 3 of graphs are the Quiz 1,2,3 scores verses Quiz 4's score. The second set of 4 graphs are the hours spend thinking about COVID-19 in weeks 1,2,3,4 verses Quiz 4's score.  The last set of 4 graphs are the hours spend studying in weeks 1,2,3,4 verses Quiz 4's score.
+
+
+![Quiz 1,2,3 scores vs Quiz 4 (respectively)](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\quiz_scores_vs_quiz4.PNG)
+![COVID-19 hours for week 1,2,3,4 vs Quiz 4 (respectively)](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\covidhours_vs_quiz4.PNG)
+![Study hours for week 1,2,3,4 vs Quiz 4 (respectively)](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\studyhours_vs_quiz4.PNG)
+
+
+|         All these types of variables share the same patterns more or less, so we will combine the individual data by taking an average.  This will give us the new variables: Quiz Average, Covid Hours, and study Hours (along with the country variable).
+
+
+
+## Model Development
+
+|         Given the data set complied by Professor Asidianya, the first step we performed was data cleansing.  Using the software, Microsoft Excel, we removed all of the observations with no quiz 4 grade.  This is because with no response variable, we can't determine how the predictor variables impacted the response variable, if there is any.  
+|         In addition, the observations that were missing 2 or more of the first 3 quizzes were also removed.  The reason for this is because using only one value to predict the outcome will not be very accurate.  Students may have a bad day and this can affect the prediction negatively.  For the students with only one missing quiz, we will still utilize them, and take an average of their two quizzes.  Though it will be less accurate with only two quizzes, our number of observations we are working with isn't a lot, so we will make use of them.  
+|         After this, some minor changes were made to the data set: Observation 44 contained some weird character, '5.5<U+00A0>', which was fixed to '5.5'.  Also a student wrote the word 'hours' after their digit, so the word 'hours' was removed to ensure the data type is numerical.
+
+
+|         Recall that as seen in the Exploratory data analysis section, the distribution of Quiz 4 is not normal but left skewed.  As a result, a transformation is necessary.  
+
+![Boxcox](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\boxcox.PNG)
+
+|         Looking at different possible transformations for left skewed data, the boxcox transformation gave the best results. Using the above graph, notice that lambda is approximately 1.45, so under the transformation, this yields: $$\frac{(y^\lambda - 1)}{\lambda} = \frac{(y^{1.45}- 1)}{1.45}$$ 
+After the transformation is applied, we obtain the following histogram (on the right hand side):
+
+![Before and After the Boxcox Transformation](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\transformation.PNG)
+
+We see that after the transformation, the data for Quiz 4 is still not perfectly normal, however it is better than before.  Note that this non-symmetry is a limitation, which will be discussed in the Conclusion section.
+
+|         Now from our Exploratory Data Analysis section, we obtained the possible predictor variables: Quiz Average, COVID-19 Hours, Study Hours, and Country.  With 4 predictor variables, to determine the best possible model, let's look at all the possible combinations of predictor variables.  We know there will be $2^{p}$ many, where p is the number of predictor variables.  Hence, there's $2^4 = 16$ such combinations.  
+
+|         So with 16 different possible models, in order to select the best one, we must perform further analysis.  For each model, we will compute the $R^2$, $R^2adj$, Akaike's Information Criterion(AIC), and also the SS Residuals.  
+
+![Models](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\Models.PNG)
+
+\newpage
+
+|         After going through each model, model 13, which contains: Quiz Avg, COVID-19 Hours, and Country appears to be the best.  
+$$ Y^*_i = \beta_0 + \beta_1X_{i1} + \beta_2X_{i2} + \beta_4X_{i3} + \epsilon $$ where $$ Y^*_i = T_y = \frac{(quizs4score^{1.45}-1)}{1.45}$$ and $X_{i1}, X_{2}, X_{i3}$ are the predictor variables.
+
+
+This model was selected for multiple reasons.  It has the lowest SS Residuals, which is desired as we want the errors terms to be minimized.  Also, its $R^2$ and $R^2_{adj}$ value is one of the highest, its AIC is the lowest.  Model 16 also looks decent, however upon looking at the scatter plots of Study hours and Quiz 4 scores, there is no real correlation between the two.  Model 13
+
+|         Now that we have chosen a model, let's see how well it performed.  First checking the Gauss-Markov Assumptions: 
+
+1) Linearity
+
+![Checking Linearity](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\linearity.PNG)
+
+Above are the scatter plots of X and Y.  The quiz averages has a faint linear trend, however it is not strong.  Now the other relation involving COVID-19 hours is not linear.  Therefore, since we don't have linear relations between the true mean of Y and X, this assumption is not met.  
+
+2) Independence of Errors
+
+![Checking Independence of Errors](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\BothResidualPlots.PNG)
+
+
+This assumption is not met because after analyzing the Residual plot, we see that the points tend to follow a pattern going from top left to bottom right on a diagonal.  Attempting to see different trends, we standardized the residual plot, however it still remains in a similar pattern as before. Thus, the errors are not independent.
+
+3) Constant Variance of the Errors
+
+![Checking Constant Variance of the Errors](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\ConstantVar.PNG){width=80%}
+
+This assumption is failed because looking at the scatter plot of Residuals versus Fitted Values, we see that for a given X value, there's multiple Y outputs.  The variance of the residuals are not the same across all values of X, and so we have non-constant variance.  We will discuss this further in the limitations section.
+
+\newpage
+
+4) Normality of the Errors
+
+![Checking Normality of Errors](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\Normality_errors.PNG)
+
+We want to verify that the residuals are approximately normally distributed.  Notice that the QQ-Plot for the most part follows the line and upon examining the histogram of residuals, it is approximately normally distributed.  Thus, we can conclude that the errors are indeed normal.
+
+|         No looking at all the Gauss-Markov assumptions as a whole, the first 3 assumptions are not fully met, which is not a good thing.  Let's continue to analyze our model in other areas. Now we'll perform some model validation.  To do this we can plot some X values and see how close it is to the expected output.
+
+|         Similarly to using the residual plots to check the independence of the errors, these same plots can be used to check improper functional form.  Since there is a non-random pattern, this suggests an improper function form. 
+
+![Outliers Check](C:\Users\david\OneDrive\Desktop\UTM\Year 3\Summer 2021\STA302\Final project\cooks.PNG){width=60%}
+
+Lastly, notice that the graph above indicates there's no outliers in the X direction by the cook's distance.
+
+
+\newpage
+
+## Conclusion
+|         In conclusion, the model that was selected after considering a total of 16 different models, was the one which contained the following predictor variables: Quiz Avg, COVID-19 Hours, and Country.  This implies that the factors predict a student's quiz 4 grade are the first 3 quizzes, the number of hours spent thinking about COVID-19, and the geographical location a given student is situated in.  Intuitively this makes sense because if a student does well in the first 3 quizzes, then their environment or even work ethic is positive, and so it will carry over to quiz 4.  The fact that the predictor variables: Amount of hours spent thinking about COVID-19 and Country are both present in the model suggests that COVID-19 is indeed a factor that predicts the quiz 4 grade.  As mentioned earlier, COVID-19 appears to cause students stress at different levels since certain countries are impacted differently.  So the countries that have a harsher impact, cause students to be thinking about COVID-19 more (as finances, or health may be a concern), and thus result in a lower quiz 4 mark.  
+|         It is worth noting that the model we developed did not meet the assumptions of linearity, independence of the errors, and  constant variance or the errors.  This may be due to the small data set that we are working with.  With few data points, our results are highly prone to outliers, and aren't highly representative of the topic at hand.  So our findings are not enough to conclude that all online classes should keep in mind these factors to increase student's grades.  More studies, with data from other classes, faculties, and even at different universities will be necessary to finalize any conclusions.
+|         There were several limitations that we faced while developing our model.  Firstly, not every student's results were present in the cleansed data set.  In the process of cleaning the data, we removed students with insufficient data and some extreme outliers.  In addition, some students have incomplete/missing data.  So our data doesn't fully provide an exact representation of the STA302 students.  Missing or incorrect data however, is expected as it is possible for humans to make errors when inputting data.  Another limitation is that when looking at the histogram of Quiz 4's results, even after the boxcox transformation was applied (the best transformation out of the ones looked at), the data still remained left skewed.  This is expected since it comes to analyzing data on grades, typically it will be left skewed because this means few students fail.  If our histogram for Quiz 4 data was symmetric/normal, then we would have half of the class failing.  Lastly, an assumptions we violated was the fact that the errors have constant variance.  The residual plots indicate that there is some sort of pattern, and so we have heteroscedasicity.  Despite these limitations, we were able to conclude that to some extent, the factors that predict a student's grade in the final assessment (Quiz 4) was: the average of the first 3 quizzes, the number of hours a student spends thinking about COVID-19, and the country from which they are taking STA302 in.
+
+
+\newpage
+
+## Appendix
+```{r}
+#Import the following library
+#library(gridExtra)
+library(ggplot2)
+library(tidyverse)
+library(MASS)
+
+#Note: After cleansing the data in Excel, we will utilize the new file, 'clean_data.csv'
+performance = read_csv('clean_data.csv')
+colnames(performance) <- c("Observation","Study_Hours_W1", "Covid_Hours_W1", "Country", "Quiz_1_Score", "Study_Hours_W2", "Covid_Hours_W2", "Quiz_2_Score", "Study_Hours_W3", "Covid_Hours_W3", "Quiz_3_Score", "Study_Hours_W4", "Covid_Hours_W4", "Quiz_4_Score", "Country_value")
+attach(performance)
+
+
+#Dividing our data based on Country:
+#Canada data
+data_canada = performance[1:92,]
+#China data
+data_china = performance[93:152,]
+#Other data
+data_other = performance[153:186,]
+
+#--------------------------------------------------------
+
+#Descriptive Statistics:
+#Looking at the histograms of all our response and predictor variables
+
+hist1 = hist(Quiz_1_Score)
+hist2 = hist(Quiz_2_Score)
+hist3 = hist(Quiz_3_Score)
+hist4 = hist(Quiz_4_Score)
+
+hist5 = hist(Study_Hours_W1)
+hist6 = hist(Study_Hours_W2)
+hist7 = hist(Study_Hours_W3)
+hist8 = hist(Study_Hours_W4)
+
+hist9 = hist(Covid_Hours_W1)
+hist10 = hist(Covid_Hours_W2)
+hist11 = hist(Covid_Hours_W3)
+hist12 = hist(Covid_Hours_W4)
+
+hist(Country_value)
+
+hist(data_canada$Quiz_4_Score)
+hist(data_china$Quiz_4_Score)
+hist(data_other$Quiz_4_Score)
+
+
+
+#Looking at the relationship between Quizzes
+
+plot(performance$Quiz_1_Score, performance$Quiz_4_Score)
+plot(performance$Quiz_2_Score, performance$Quiz_4_Score)
+plot(performance$Quiz_3_Score, performance$Quiz_4_Score)
+
+plot(performance$Country_value, performance$Quiz_4_Score)
+
+plot(performance$Study_Hours_W1, performance$Quiz_4_Score)
+plot(performance$Study_Hours_W2, performance$Quiz_4_Score)
+plot(performance$Study_Hours_W3, performance$Quiz_4_Score)
+plot(performance$Study_Hours_W4, performance$Quiz_4_Score)
+
+plot(performance$Covid_Hours_W1, performance$Quiz_4_Score)
+plot(performance$Covid_Hours_W2, performance$Quiz_4_Score)
+plot(performance$Covid_Hours_W3, performance$Quiz_4_Score)
+plot(performance$Covid_Hours_W4, performance$Quiz_4_Score)
+
+
+
+#--------------------------------------------------------
+
+#Compared the type of variable with the response, and they all more or less share the same patterns.
+#So we will create an average for each category: Quiz Average, Covid Hours, and study Hours
+
+# Averaging the first 3 quizzes for each student
+performance$early_quiz_avg = rowSums(performance[,c(5,8,11)]) / 3
+
+# Averaging the number of hours considering covid-19
+performance$covid_hours_avg = rowSums(performance[,c(3, 7, 10)]) / 3
+
+# Averaging the number of hours spent studying
+    #Converting the data type from character to numeric 
+performance[, c(2,6,9)] <- sapply(performance[, c(2,6,9)], as.numeric)
+performance$study_hours_avg = rowSums(performance[,c(2, 6, 9)]) / 3
+
+# Checking the correlation between our predictor variables
+
+# early_quiz_avg_new <- na.omit(performance$early_quiz_avg)
+# covid_hours_avg_new <- na.omit(performance$covid_hours_avg)
+# study_hours_avg_new <- na.omit(performance$study_hours_avg)
+# cor(early_quiz_avg_new, covid_hours_avg_new)
+# cor(early_quiz_avg_new, study_hours_avg_new)
+# cor(study_hours_avg_new, covid_hours_avg_new)
+
+print(performance$early_quiz_avg)
+print(performance$covid_hours_avg)
+print(performance$study_hours_avg)
+
+
+
+
+
+#--------------------------------------------------------
+
+
+#Applying the Boxcox Transformation (from lecture)
+boxcox(Quiz_4_Score ~ Quiz_1_Score)
+T_y = (Quiz_4_Score ^ 1.45 - 1)/1.45
+hist(T_y)
+
+
+
+# Looking at the following models:
+
+#model 1:
+multi.fit1 = lm(T_y ~ 1, data = performance)
+summary(multi.fit1)
+
+#model 2:
+multi.fit2 = lm(T_y ~ early_quiz_avg, data = performance)
+summary(multi.fit2)
+
+#model 3:
+multi.fit3 = lm(T_y ~ covid_hours_avg, data = performance)
+summary(multi.fit3)
+
+#model 4:
+multi.fit4 = lm(T_y ~ study_hours_avg, data = performance)
+summary(multi.fit4)
+
+#model 5:
+multi.fit5 = lm(T_y ~ Country_value, data = performance)
+summary(multi.fit5)
+
+#model 6:
+multi.fit6 = lm(T_y ~ early_quiz_avg + covid_hours_avg, data = performance)
+summary(multi.fit6)
+
+#model 7:
+multi.fit7 = lm(T_y ~ early_quiz_avg + study_hours_avg, data = performance)
+summary(multi.fit7)
+
+#model 8:
+multi.fit8 = lm(T_y ~ early_quiz_avg + Country_value, data = performance)
+summary(multi.fit8)
+
+#model 9:
+multi.fit9 = lm(T_y ~ covid_hours_avg + study_hours_avg, data = performance)
+summary(multi.fit9)
+
+#model 10:
+multi.fit10 = lm(T_y ~ covid_hours_avg + Country_value, data = performance)
+summary(multi.fit10)
+
+#model 11:
+multi.fit11 = lm(T_y ~ study_hours_avg + Country_value, data = performance)
+summary(multi.fit11)
+
+#model 12:
+multi.fit12 = lm(T_y ~ early_quiz_avg  + covid_hours_avg + study_hours_avg, data = performance)
+summary(multi.fit12)
+
+#model 13:
+multi.fit13 = lm(T_y ~ early_quiz_avg  + covid_hours_avg + Country_value, data = performance)
+summary(multi.fit13)
+
+#model 14:
+multi.fit14 = lm(T_y ~ early_quiz_avg + study_hours_avg + Country_value, data = performance)
+summary(multi.fit14)
+
+#model 15:
+multi.fit15 = lm(T_y ~ covid_hours_avg + study_hours_avg + Country_value, data = performance)
+summary(multi.fit15)
+
+#model 16:
+multi.fit16 = lm(T_y ~ early_quiz_avg  + covid_hours_avg + study_hours_avg + Country_value, data = performance)
+summary(multi.fit16)
+
+Independent_var <- c("None", "Quiz Avg", "Covid Hours Avg", "Study Hours Avg", "Country", "Quiz Avg and Covid Hours Avg", "Quiz Avg and Study Hours Avg", "Quiz Avg and Country", "Covid Hours Avg and Study Hours Avg", "Covid Hours Avg and Country", "Study Hours Avg and Country", "Quiz Avg, Covid Hours Avg and Study Hours Avg", "Quiz Avg, Covid Hours Avg and Country", "Quiz Avg, Study Hours Avg and Country", "Covid Hours Avg, Study Hours Avg and Country", "Quiz Avg, Covid Hours Avg, Study Hours Avg and Country")
+
+SSres <- c(sum(resid(multi.fit1)^2), sum(resid(multi.fit2)^2), sum(resid(multi.fit3)^2), sum(resid(multi.fit4)^2), sum(resid(multi.fit5)^2), sum(resid(multi.fit6)^2), sum(resid(multi.fit7)^2), sum(resid(multi.fit8)^2), sum(resid(multi.fit9)^2), sum(resid(multi.fit10)^2), sum(resid(multi.fit11)^2), sum(resid(multi.fit12)^2), sum(resid(multi.fit13)^2), sum(resid(multi.fit14)^2), sum(resid(multi.fit15)^2), sum(resid(multi.fit16)^2))
+
+R_squared <- c(summary(multi.fit1)$r.squared, summary(multi.fit2)$r.squared, summary(multi.fit3)$r.squared, summary(multi.fit4)$r.squared, summary(multi.fit5)$r.squared, summary(multi.fit6)$r.squared, summary(multi.fit7)$r.squared, summary(multi.fit8)$r.squared, summary(multi.fit9)$r.squared, summary(multi.fit10)$r.squared, summary(multi.fit11)$r.squared, summary(multi.fit12)$r.squared, summary(multi.fit13)$r.squared, summary(multi.fit14)$r.squared, summary(multi.fit15)$r.squared, summary(multi.fit16)$r.squared)
+
+R_squared_adj <- c(summary(multi.fit1)$adj.r.squared, summary(multi.fit2)$adj.r.squared, summary(multi.fit3)$adj.r.squared, summary(multi.fit4)$adj.r.squared, summary(multi.fit5)$adj.r.squared, summary(multi.fit6)$adj.r.squared, summary(multi.fit7)$adj.r.squared, summary(multi.fit8)$adj.r.squared, summary(multi.fit9)$adj.r.squared, summary(multi.fit10)$adj.r.squared, summary(multi.fit11)$adj.r.squared, summary(multi.fit12)$adj.r.squared, summary(multi.fit13)$adj.r.squared, summary(multi.fit14)$adj.r.squared, summary(multi.fit15)$adj.r.squared, summary(multi.fit16)$adj.r.squared)
+
+AIC_val <- c(AIC(multi.fit1), AIC(multi.fit2), AIC(multi.fit3), AIC(multi.fit4), AIC(multi.fit5), AIC(multi.fit6), AIC(multi.fit7), AIC(multi.fit8), AIC(multi.fit9), AIC(multi.fit10), AIC(multi.fit11), AIC(multi.fit12), AIC(multi.fit13), AIC(multi.fit14), AIC(multi.fit15), AIC(multi.fit16))
+
+
+
+models_chart <- data.frame(Independent_var, SSres, R_squared, R_squared_adj, AIC_val)
+print(models_chart)
+
+
+#The most optimal model is Model 13, which has the predictor variables: Quiz Avg, Covid Hours Avg, and Country.
+#Now we'll perform some model validation and see how well it performed.
+#Plot some X values and see how close it is to the expected output.
+# residuals plot: improper functional form
+#No outliers in the X direction looking at cook's distance
+
+
+#Checking Linearity
+plot(performance$early_quiz_avg, Quiz_4_Score)
+plot(performance$covid_hours_avg, Quiz_4_Score)
+plot(performance$study_hours_avg, Quiz_4_Score)
+
+
+plot(multi.fit13)
+
+
+# After selecting the model, we'll not look at the Gauss-Markov Assumptions
+multi.res = resid(multi.fit13)
+
+fitted_values = fitted(multi.fit13)
+
+plot(fitted_values, multi.res, ylab = "Residuals", xlab = "Fitted Values", main = "Residual Plot")
+abline(h=0)
+
+#Standardize Residuals
+multi.stdres = rstandard(multi.fit13)
+qqnorm(multi.stdres, ylab = "Standardized Residuals", xlab = "Normal Scores", main = "Normal QQ Plot")
+qqline(multi.stdres)
+
+hist(multi.res)
+```
